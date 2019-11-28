@@ -142,6 +142,7 @@ body {
     width: 100%;
     height: 100%;
     flex-grow: 1;
+    overflow-y: scroll;
 }
 
 #lump-view-name {
@@ -506,6 +507,17 @@ body {
     }
     #lump-view-buttons .view-button {
         display: block;
+    }
+}
+@media screen and (max-width: 699px){
+    #lump-list {
+        width: 160px;
+    }
+    #lump-list .list-item > .type {
+        display: none;
+    }
+    #lump-list .list-item > .size {
+        display: none;
     }
 }
 /*Most desktops*/
