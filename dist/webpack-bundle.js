@@ -5839,6 +5839,10 @@ class WADFileList {
             mapIndex: mapIndex,
         });
     }
+    // Get the index of the given WAD file in this list. Return -1 if it isn't in the list.
+    indexOf(wad) {
+        return this.files.findIndex((wadInList) => wadInList === wad);
+    }
 }
 exports.WADFileList = WADFileList;
 exports.default = WADFileList;
@@ -6223,7 +6227,6 @@ const lumpTypeView_1 = __webpack_require__(/*! @web/lumpTypeView */ "./dist/web/
 const util = __webpack_require__(/*! @web/util */ "./dist/web/util.js");
 const win = window;
 const wadFiles = new fileList_1.WADFileList();
-let currentWadIndex = -1;
 let fileInput;
 let selectedListItem;
 let selectedView = null;
@@ -6349,19 +6352,22 @@ function onLoadNewFile(file) {
     reader.onload = function () {
         if (reader.result) {
             wad.loadData(Buffer.from(reader.result));
-            const wadListIndex = addWadToList(wad);
-            setCurrentWad(wad, wadListIndex);
+            addWadToList(wad);
+            setCurrentWad(wad);
         }
     };
 }
 win.onLoadWad = function (wad) {
-    const wadFileNames = wadFiles.files.map((wadFile) => wadFile.path);
-    if (wadFileNames.includes(wad.path)) {
-        // WAD already loaded
-        return;
+    const wadFileIndex = wadFiles.files.findIndex((wadInList) => wadInList.path === wad.path);
+    if (wadFileIndex >= 0) {
+        const wadData = wad.getData().toString("base64");
+        const wadInListData = wadFiles.files[wadFileIndex].getData().toString("base64");
+        if (wadData === wadInListData) {
+            return;
+        }
     }
-    const wadListIndex = addWadToList(wad);
-    setCurrentWad(wad, wadListIndex);
+    addWadToList(wad);
+    setCurrentWad(wad);
 };
 win.onSearchInput = function () {
     const search = util.id("lump-list-search");
@@ -6499,7 +6505,6 @@ function updateLumpViewButtons(item) {
 }
 function addWadToList(wad) {
     const fileList = util.id("open-file-list");
-    const wadFileIndex = wadFiles.files.length;
     const wadListEntry = util.createElement({
         tag: "li",
         appendTo: fileList,
@@ -6515,8 +6520,7 @@ function addWadToList(wad) {
         class: "file-name",
         innerText: wad.path,
         onleftclick: () => {
-            const wad = wadFiles.files[wadFileIndex];
-            setCurrentWad(wad, wadFileIndex);
+            setCurrentWad(wad);
         },
         appendTo: flexContainer,
     });
@@ -6525,13 +6529,17 @@ function addWadToList(wad) {
         class: "file-close-button",
         innerText: "\xD7",
         onleftclick: () => {
-            wadFiles.removeByIndex(wadFileIndex);
+            const wadFileIndex = wadFiles.indexOf(wad);
+            const currentWadIndex = Array.prototype.findIndex.call(fileList.querySelectorAll("li > div.flex-h"), (element) => {
+                return element.classList.contains("current-wad");
+            });
+            wadFiles.removeFile(wad);
             fileList.removeChild(wadListEntry);
             lumpTypeView_1.setWadList(wadFiles);
             if (wadFileIndex === currentWadIndex) {
                 if (wadFileIndex > 0) {
                     const previousWad = wadFiles.files[wadFileIndex - 1];
-                    setCurrentWad(previousWad, wadFileIndex - 1);
+                    setCurrentWad(previousWad);
                 }
                 else {
                     setCurrentWad(null);
@@ -6542,16 +6550,16 @@ function addWadToList(wad) {
     });
     wadFiles.addFile(wad);
     lumpTypeView_1.setWadList(wadFiles);
-    return wadFileIndex;
 }
-function setCurrentWad(wad, listIndex = -1) {
+function setCurrentWad(wad) {
     const lumpList = util.id("lump-list-content");
     util.removeChildren(lumpList);
-    currentWadIndex = listIndex;
     if (!wad) {
         util.id("current-filename").innerText = "No WAD";
         return;
     }
+    // It is assumed that wad is in the WAD file list.
+    const listIndex = wadFiles.indexOf(wad);
     let itemIndex = 0;
     util.id("current-filename").innerText = wad.path;
     for (const lump of wad.lumps) {
