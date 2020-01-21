@@ -8994,7 +8994,7 @@ BufferModel.nullMappable = {
 };
 BufferModel.nullTexture = (() => {
     const loader = new THREE.TextureLoader();
-    return loader.load("/assets/textures/missing.png", (texture) => {
+    return loader.load("assets/textures/missing.png", (texture) => {
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.magFilter = THREE.NearestFilter;
