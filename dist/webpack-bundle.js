@@ -200,8 +200,8 @@ class SectorPolygonBuilder {
     // Get the clockwise or counterclockwise angle between three points
     static angleBetween(p1, center, p2, clockwise = false) {
         // Rewritten to be simpler and work better with the THREE.js API
-        const ab = p1.clone().sub(center).normalize();
-        const cb = p2.clone().sub(center).normalize();
+        const ab = p1.clone().sub(center);
+        const cb = p2.clone().sub(center);
         // Dot and cross product of the two vectors
         const dot = ab.dot(cb);
         const cross = ab.cross(cb);
